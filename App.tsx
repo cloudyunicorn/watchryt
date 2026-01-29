@@ -5,10 +5,12 @@ import { RootNavigator, navigationRef } from './src/navigation';
 import { initDatabase } from './src/services/db';
 import { initNotifications } from './src/services/reminders';
 import * as Notifications from 'expo-notifications';
-import { Linking, Platform } from 'react-native';
+import { Linking } from 'react-native';
 import { useShareIntent } from 'expo-share-intent';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 
-export default function App() {
+function AppContent() {
+  const { isDarkMode } = useTheme();
   const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent();
   const hasHandledIntent = useRef(false);
 
@@ -80,9 +82,19 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
+    <>
+      <StatusBar style={isDarkMode ? "light" : "dark"} />
       <RootNavigator />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

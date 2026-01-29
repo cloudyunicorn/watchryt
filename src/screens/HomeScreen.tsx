@@ -1,16 +1,19 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { VideoCard } from '../components/VideoCard';
-import { theme } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
 import { Video } from '../types';
 import { getVideos, deleteVideo } from '../services/db';
 import { Ionicons } from '@expo/vector-icons';
 
-type FilterType = 'All' | 'Today' | 'Upcoming';
+type FilterType = 'All' | 'Today' | 'Earlier';
 
 export const HomeScreen = () => {
     const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
+    const { colors } = useTheme();
     const [videos, setVideos] = useState<Video[]>([]);
     const [filter, setFilter] = useState<FilterType>('All');
 
@@ -30,42 +33,204 @@ export const HomeScreen = () => {
         loadVideos();
     };
 
+    const isToday = (date: Date) => {
+        const now = new Date();
+        return date.getDate() === now.getDate() &&
+            date.getMonth() === now.getMonth() &&
+            date.getFullYear() === now.getFullYear();
+    };
+
     const getFilteredVideos = () => {
         return videos.filter((v: Video) => {
             if (filter === 'All') return true;
-            if (!v.reminderTime) return false;
 
-            const reminderDate = new Date(v.reminderTime);
-            const now = new Date();
-            const isToday = reminderDate.getDate() === now.getDate() &&
-                reminderDate.getMonth() === now.getMonth() &&
-                reminderDate.getFullYear() === now.getFullYear();
+            const saveDate = new Date(v.createdAt);
 
-            if (filter === 'Today') return isToday;
-            if (filter === 'Upcoming') return reminderDate > now;
+            if (filter === 'Today') return isToday(saveDate);
+            if (filter === 'Earlier') return !isToday(saveDate);
 
             return true;
         });
     };
 
+    const getFilterCount = (filterType: FilterType) => {
+        if (filterType === 'All') return videos.length;
+
+        return videos.filter((v: Video) => {
+            const saveDate = new Date(v.createdAt);
+            if (filterType === 'Today') return isToday(saveDate);
+            if (filterType === 'Earlier') return !isToday(saveDate);
+            return false;
+        }).length;
+    };
+
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: colors.background,
+        },
+        header: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            paddingHorizontal: 20,
+            marginBottom: 24,
+        },
+        greeting: {
+            fontSize: 14,
+            color: colors.textSecondary,
+            marginBottom: 4,
+        },
+        title: {
+            fontSize: 28,
+            fontWeight: 'bold',
+            color: colors.textPrimary,
+        },
+        statsContainer: {
+            alignItems: 'flex-end',
+        },
+        statBadge: {
+            backgroundColor: colors.surfaceHighlight,
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+            borderRadius: 12,
+            alignItems: 'center',
+        },
+        statNumber: {
+            fontSize: 20,
+            fontWeight: 'bold',
+            color: colors.primary,
+        },
+        statLabel: {
+            fontSize: 11,
+            color: colors.textSecondary,
+            marginTop: 2,
+        },
+        tabs: {
+            flexDirection: 'row',
+            paddingHorizontal: 20,
+            marginBottom: 20,
+            gap: 12,
+        },
+        tab: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 16,
+            paddingVertical: 10,
+            borderRadius: 24,
+            backgroundColor: colors.surface,
+            gap: 8,
+        },
+        tabActive: {
+            backgroundColor: colors.primary,
+        },
+        tabText: {
+            color: colors.textSecondary,
+            fontSize: 14,
+            fontWeight: '600',
+        },
+        tabTextActive: {
+            color: '#FFF',
+        },
+        tabBadge: {
+            backgroundColor: colors.surfaceHighlight,
+            paddingHorizontal: 8,
+            paddingVertical: 2,
+            borderRadius: 10,
+            minWidth: 24,
+            alignItems: 'center',
+        },
+        tabBadgeActive: {
+            backgroundColor: 'rgba(255,255,255,0.2)',
+        },
+        tabBadgeText: {
+            fontSize: 12,
+            fontWeight: '600',
+            color: colors.textSecondary,
+        },
+        tabBadgeTextActive: {
+            color: '#FFF',
+        },
+        list: {
+            paddingHorizontal: 20,
+            paddingBottom: 100,
+        },
+        empty: {
+            marginTop: 80,
+            alignItems: 'center',
+            paddingHorizontal: 40,
+        },
+        emptyTitle: {
+            fontSize: 20,
+            fontWeight: '600',
+            color: colors.textPrimary,
+            marginTop: 16,
+            marginBottom: 8,
+        },
+        emptyText: {
+            color: colors.textSecondary,
+            textAlign: 'center',
+            lineHeight: 20,
+        },
+        fab: {
+            position: 'absolute',
+            bottom: 24,
+            right: 20,
+            backgroundColor: colors.primary,
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            justifyContent: 'center',
+            alignItems: 'center',
+            elevation: 8,
+            shadowColor: colors.primary,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.4,
+            shadowRadius: 8,
+        },
+        fabPressed: {
+            transform: [{ scale: 0.95 }],
+            opacity: 0.9,
+        },
+    });
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+            {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.title}>WatchRyt</Text>
+                <View>
+                    <Text style={styles.greeting}>Welcome back</Text>
+                    <Text style={styles.title}>WatchRyt</Text>
+                </View>
+                <View style={styles.statsContainer}>
+                    <View style={styles.statBadge}>
+                        <Text style={styles.statNumber}>{videos.length}</Text>
+                        <Text style={styles.statLabel}>Saved</Text>
+                    </View>
+                </View>
             </View>
 
+            {/* Filter Tabs */}
             <View style={styles.tabs}>
-                {(['All', 'Today', 'Upcoming'] as FilterType[]).map(t => (
+                {(['All', 'Today', 'Earlier'] as FilterType[]).map(t => (
                     <Pressable
                         key={t}
                         style={[styles.tab, filter === t && styles.tabActive]}
                         onPress={() => setFilter(t)}
                     >
-                        <Text style={[styles.tabText, filter === t && styles.tabTextActive]}>{t}</Text>
+                        <Text style={[styles.tabText, filter === t && styles.tabTextActive]}>
+                            {t}
+                        </Text>
+                        <View style={[styles.tabBadge, filter === t && styles.tabBadgeActive]}>
+                            <Text style={[styles.tabBadgeText, filter === t && styles.tabBadgeTextActive]}>
+                                {getFilterCount(t)}
+                            </Text>
+                        </View>
                     </Pressable>
                 ))}
             </View>
 
+            {/* Video List */}
             <FlatList
                 data={getFilteredVideos()}
                 keyExtractor={(item: Video) => item.id.toString()}
@@ -77,87 +242,32 @@ export const HomeScreen = () => {
                     />
                 )}
                 contentContainerStyle={styles.list}
+                showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
                     <View style={styles.empty}>
-                        <Text style={styles.emptyText}>No videos found</Text>
+                        <Ionicons name="videocam-outline" size={64} color={colors.textSecondary} />
+                        <Text style={styles.emptyTitle}>No videos yet</Text>
+                        <Text style={styles.emptyText}>
+                            {filter === 'Today'
+                                ? "You haven't saved any videos today"
+                                : filter === 'Earlier'
+                                    ? "No videos from earlier days"
+                                    : "Tap + to save your first video"}
+                        </Text>
                     </View>
                 }
             />
 
+            {/* FAB */}
             <Pressable
                 onPress={() => (navigation as any).navigate('AddVideo')}
-                style={styles.fab}
+                style={({ pressed }) => [
+                    styles.fab,
+                    pressed && styles.fabPressed
+                ]}
             >
-                <Ionicons name="add" size={32} color="#FFF" />
+                <Ionicons name="add" size={28} color="#FFF" />
             </Pressable>
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: theme.colors.background,
-        paddingTop: theme.spacing.xl,
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: theme.spacing.m,
-        marginBottom: theme.spacing.m,
-    },
-    title: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: theme.colors.textPrimary,
-    },
-    fab: {
-        position: 'absolute',
-        bottom: 24,
-        right: 24,
-        backgroundColor: theme.colors.primary,
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        justifyContent: 'center',
-        alignItems: 'center',
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-    },
-    tabs: {
-        flexDirection: 'row',
-        paddingHorizontal: theme.spacing.m,
-        marginBottom: theme.spacing.m,
-    },
-    tab: {
-        marginRight: theme.spacing.m,
-        paddingBottom: 4,
-    },
-    tabActive: {
-        borderBottomWidth: 2,
-        borderBottomColor: theme.colors.primary,
-    },
-    tabText: {
-        color: theme.colors.textSecondary,
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    tabTextActive: {
-        color: theme.colors.textPrimary,
-    },
-    list: {
-        paddingHorizontal: theme.spacing.m,
-        paddingBottom: theme.spacing.xl,
-    },
-    empty: {
-        marginTop: 40,
-        alignItems: 'center',
-    },
-    emptyText: {
-        color: theme.colors.textSecondary,
-    }
-});

@@ -1,9 +1,9 @@
 import React from 'react';
-import { NavigationContainer, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { FolderListScreen } from '../screens/FolderListScreen';
@@ -25,45 +25,83 @@ const FolderStackNavigator = () => (
     </FolderStack.Navigator>
 );
 
-const MainTabs = () => (
-    <Tab.Navigator
-        screenOptions={({ route }: { route: any }) => ({
-            headerShown: false,
-            tabBarStyle: {
-                backgroundColor: theme.colors.surface,
-                borderTopColor: theme.colors.surfaceHighlight,
-                paddingBottom: 4,
-                paddingTop: 4,
-            },
-            tabBarActiveTintColor: theme.colors.primary,
-            tabBarInactiveTintColor: theme.colors.textSecondary,
-            tabBarIcon: ({ focused, color, size }: { focused: boolean; color: string; size: number }) => {
-                let iconName: any = 'home';
-                if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
-                else if (route.name === 'Folders') iconName = focused ? 'folder' : 'folder-outline';
-                else if (route.name === 'Settings') iconName = focused ? 'settings' : 'settings-outline';
-                return <Ionicons name={iconName} size={size} color={color} />;
-            },
-        })}
-    >
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Folders" component={FolderStackNavigator} />
-        <Tab.Screen name="Settings" component={SettingsScreen} />
-    </Tab.Navigator>
-);
+const MainTabs = () => {
+    const { colors } = useTheme();
 
-export const RootNavigator = () => (
-    <NavigationContainer ref={navigationRef} theme={DarkTheme}>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="Main" component={MainTabs} />
-            <Stack.Screen
-                name="AddVideo"
-                component={AddVideoModal}
-                options={{
-                    presentation: 'modal',
-                    cardStyle: { backgroundColor: 'transparent' } // If custom modal effect needed
-                }}
-            />
-        </Stack.Navigator>
-    </NavigationContainer>
-);
+    return (
+        <Tab.Navigator
+            screenOptions={({ route }: { route: any }) => ({
+                headerShown: false,
+                tabBarStyle: {
+                    backgroundColor: colors.surface,
+                    borderTopColor: colors.surfaceHighlight,
+                    borderTopWidth: 1,
+                    paddingTop: 8,
+                    paddingBottom: 24,
+                    height: 70,
+                },
+                tabBarActiveTintColor: colors.primary,
+                tabBarInactiveTintColor: colors.textSecondary,
+                tabBarLabelStyle: {
+                    fontSize: 11,
+                    fontWeight: '600',
+                    marginTop: 4,
+                },
+                tabBarIcon: ({ focused, color }: { focused: boolean; color: string }) => {
+                    let iconName: any = 'home';
+                    if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
+                    else if (route.name === 'Folders') iconName = focused ? 'folder' : 'folder-outline';
+                    else if (route.name === 'Settings') iconName = focused ? 'settings' : 'settings-outline';
+                    return <Ionicons name={iconName} size={24} color={color} />;
+                },
+            })}
+        >
+            <Tab.Screen name="Home" component={HomeScreen} />
+            <Tab.Screen name="Folders" component={FolderStackNavigator} />
+            <Tab.Screen name="Settings" component={SettingsScreen} />
+        </Tab.Navigator>
+    );
+};
+
+export const RootNavigator = () => {
+    const { isDarkMode, colors } = useTheme();
+
+    // Create custom theme based on current colors
+    const navigationTheme = isDarkMode ? {
+        ...DarkTheme,
+        colors: {
+            ...DarkTheme.colors,
+            background: colors.background,
+            card: colors.surface,
+            text: colors.textPrimary,
+            primary: colors.primary,
+            border: colors.border,
+        },
+    } : {
+        ...DefaultTheme,
+        colors: {
+            ...DefaultTheme.colors,
+            background: colors.background,
+            card: colors.surface,
+            text: colors.textPrimary,
+            primary: colors.primary,
+            border: colors.border,
+        },
+    };
+
+    return (
+        <NavigationContainer ref={navigationRef} theme={navigationTheme}>
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="Main" component={MainTabs} />
+                <Stack.Screen
+                    name="AddVideo"
+                    component={AddVideoModal}
+                    options={{
+                        presentation: 'modal',
+                        cardStyle: { backgroundColor: 'transparent' }
+                    }}
+                />
+            </Stack.Navigator>
+        </NavigationContainer>
+    );
+};

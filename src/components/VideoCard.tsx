@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, Pressable, Linking, Modal, TouchableWithoutFeedback } from 'react-native';
 import { Video, Platform } from '../types';
-import { theme } from '../constants/theme';
-// Icons could be from @expo/vector-icons, assuming standard Expo setup includes them or we use text for now
+import { useTheme } from '../context/ThemeContext';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 
 interface Props {
@@ -14,24 +13,15 @@ interface Props {
 const getPlatformIcon = (platform: Platform) => {
     switch (platform) {
         case Platform.Instagram: return 'instagram';
-        case Platform.TikTok: return 'music'; // FontAwesome doesn't have tiktok in older versions, using music or similar
+        case Platform.TikTok: return 'music';
         case Platform.YouTube: return 'youtube-play';
         case Platform.Facebook: return 'facebook';
         default: return 'link';
     }
 };
 
-const getPlatformColor = (platform: Platform) => {
-    switch (platform) {
-        case Platform.Instagram: return theme.colors.instagram;
-        case Platform.TikTok: return theme.colors.tiktok;
-        case Platform.YouTube: return theme.colors.youtube;
-        case Platform.Facebook: return theme.colors.facebook;
-        default: return theme.colors.textSecondary;
-    }
-}
-
 export const VideoCard = ({ video, onPress, onDelete }: Props) => {
+    const { colors, borderRadius, spacing, typography } = useTheme();
     const [previewVisible, setPreviewVisible] = React.useState(false);
 
     const handleOpen = async () => {
@@ -41,6 +31,128 @@ export const VideoCard = ({ video, onPress, onDelete }: Props) => {
             console.warn('Cannot open URL', e);
         }
     };
+
+    const styles = StyleSheet.create({
+        card: {
+            backgroundColor: colors.surface,
+            borderRadius: borderRadius.m,
+            marginBottom: spacing.m,
+            flexDirection: 'row',
+            padding: spacing.s,
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: colors.surfaceHighlight,
+        },
+        thumbnailContainer: {
+            position: 'relative',
+        },
+        thumbnail: {
+            width: 80,
+            height: 100,
+            borderRadius: borderRadius.s,
+            backgroundColor: colors.surfaceHighlight,
+        },
+        placeholderThumbnail: {
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        platformBadge: {
+            position: 'absolute',
+            bottom: 4,
+            right: 4,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            padding: 4,
+            borderRadius: 4,
+        },
+        content: {
+            flex: 1,
+            marginLeft: spacing.m,
+            justifyContent: 'center',
+        },
+        title: {
+            color: colors.textPrimary,
+            fontSize: typography.body.fontSize,
+            fontWeight: '600',
+            marginBottom: 4,
+        },
+        creator: {
+            color: colors.textSecondary,
+            fontSize: typography.caption.fontSize,
+            fontWeight: '600',
+        },
+        creatorRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginBottom: 4,
+            gap: 8,
+        },
+        platformTag: {
+            backgroundColor: colors.surfaceHighlight,
+            paddingHorizontal: 8,
+            paddingVertical: 2,
+            borderRadius: 4,
+        },
+        platformTagText: {
+            color: colors.textSecondary,
+            fontSize: 10,
+            fontWeight: '600',
+            textTransform: 'uppercase',
+        },
+        reminderContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginLeft: 8,
+        },
+        reminderText: {
+            color: colors.primary,
+            fontSize: 11,
+            marginLeft: 3,
+        },
+        metaRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginTop: 6,
+        },
+        dateText: {
+            color: colors.textSecondary,
+            fontSize: 11,
+        },
+        deleteBtn: {
+            padding: 8,
+        },
+        modalOverlay: {
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 20,
+        },
+        previewContainer: {
+            width: '90%',
+            backgroundColor: colors.surface,
+            borderRadius: borderRadius.l,
+            overflow: 'hidden',
+            alignItems: 'center',
+            paddingBottom: 20,
+        },
+        enlargedThumbnail: {
+            width: '100%',
+            height: 400,
+            backgroundColor: '#000',
+        },
+        placeholderEnlarged: {
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        previewTitle: {
+            color: colors.textPrimary,
+            fontSize: 18,
+            fontWeight: 'bold',
+            marginTop: 15,
+            textAlign: 'center',
+            paddingHorizontal: 15,
+        }
+    });
 
     return (
         <Pressable
@@ -65,7 +177,7 @@ export const VideoCard = ({ video, onPress, onDelete }: Props) => {
                                 />
                             ) : (
                                 <View style={[styles.enlargedThumbnail, styles.placeholderEnlarged]}>
-                                    <FontAwesome name="play-circle" size={80} color={theme.colors.textSecondary} />
+                                    <FontAwesome name="play-circle" size={80} color={colors.textSecondary} />
                                 </View>
                             )}
                             <Text style={styles.previewTitle} numberOfLines={2}>{video.title}</Text>
@@ -78,7 +190,7 @@ export const VideoCard = ({ video, onPress, onDelete }: Props) => {
                     <Image source={{ uri: video.thumbnailUrl }} style={styles.thumbnail} />
                 ) : (
                     <View style={[styles.thumbnail, styles.placeholderThumbnail]}>
-                        <FontAwesome name="play-circle" size={32} color={theme.colors.textSecondary} />
+                        <FontAwesome name="play-circle" size={32} color={colors.textSecondary} />
                     </View>
                 )}
                 <View style={styles.platformBadge}>
@@ -112,7 +224,7 @@ export const VideoCard = ({ video, onPress, onDelete }: Props) => {
 
                     {video.reminderTime && (
                         <View style={styles.reminderContainer}>
-                            <Ionicons name="alarm-outline" size={12} color={theme.colors.primary} />
+                            <Ionicons name="alarm-outline" size={12} color={colors.primary} />
                             <Text style={styles.reminderText}>
                                 {new Date(video.reminderTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </Text>
@@ -122,130 +234,8 @@ export const VideoCard = ({ video, onPress, onDelete }: Props) => {
             </View>
 
             <Pressable onPress={onDelete} style={styles.deleteBtn}>
-                <Ionicons name="trash-outline" size={20} color={theme.colors.textSecondary} />
+                <Ionicons name="trash-outline" size={20} color={colors.textSecondary} />
             </Pressable>
         </Pressable>
     );
 };
-
-const styles = StyleSheet.create({
-    card: {
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.m,
-        marginBottom: theme.spacing.m,
-        flexDirection: 'row',
-        padding: theme.spacing.s,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: theme.colors.surfaceHighlight,
-    },
-    thumbnailContainer: {
-        position: 'relative',
-    },
-    thumbnail: {
-        width: 80,
-        height: 100,
-        borderRadius: theme.borderRadius.s,
-        backgroundColor: theme.colors.surfaceHighlight,
-    },
-    placeholderThumbnail: {
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    platformBadge: {
-        position: 'absolute',
-        bottom: 4,
-        right: 4,
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        padding: 4,
-        borderRadius: 4,
-    },
-    content: {
-        flex: 1,
-        marginLeft: theme.spacing.m,
-        justifyContent: 'center',
-    },
-    title: {
-        color: theme.colors.textPrimary,
-        fontSize: theme.typography.body.fontSize,
-        fontWeight: '600',
-        marginBottom: 4,
-    },
-    creator: {
-        color: theme.colors.textSecondary,
-        fontSize: theme.typography.caption.fontSize,
-        fontWeight: '600',
-    },
-    creatorRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 4,
-        gap: 8,
-    },
-    platformTag: {
-        backgroundColor: theme.colors.surfaceHighlight,
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 4,
-    },
-    platformTagText: {
-        color: theme.colors.textSecondary,
-        fontSize: 10,
-        fontWeight: '600',
-        textTransform: 'uppercase',
-    },
-    reminderContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginLeft: 8,
-    },
-    reminderText: {
-        color: theme.colors.primary,
-        fontSize: 11,
-        marginLeft: 3,
-    },
-    metaRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 6,
-    },
-    dateText: {
-        color: theme.colors.textSecondary,
-        fontSize: 11,
-    },
-    deleteBtn: {
-        padding: 8,
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.85)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-    },
-    previewContainer: {
-        width: '90%',
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.l,
-        overflow: 'hidden',
-        alignItems: 'center',
-        paddingBottom: 20,
-    },
-    enlargedThumbnail: {
-        width: '100%',
-        height: 400,
-        backgroundColor: '#000',
-    },
-    placeholderEnlarged: {
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    previewTitle: {
-        color: theme.colors.textPrimary,
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginTop: 15,
-        textAlign: 'center',
-        paddingHorizontal: 15,
-    }
-});
