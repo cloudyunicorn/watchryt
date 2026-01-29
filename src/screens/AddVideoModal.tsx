@@ -1,20 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, ActivityIndicator, Alert, Image as RNImage } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { theme } from '../constants/theme';
 import { Video, Platform, Folder } from '../types';
 import { isValidLink, getVideoMetadata } from '../services/linkHandler';
 import { saveVideo, getFolders } from '../services/db';
 import { scheduleReminder } from '../services/reminders';
 import { Ionicons } from '@expo/vector-icons';
-// Note: need to install @react-native-community/datetimepicker if not present, but for now I will use simple preset buttons + standard date picker if requested
-// Actually I'll implement simple preset buttons for MVP (1 hr, tonight, tomorrow)
-// Detailed date picker might need extra package. I'll check if I should use it or simulated one.
-// The prompt asked for "Reminder Picker". I will use basic logic.
 
 export const AddVideoModal = () => {
     const navigation = useNavigation();
+    const route = useRoute<any>();
     const [url, setUrl] = useState('');
     const [title, setTitle] = useState('');
     const [thumbnailUrl, setThumbnailUrl] = useState('');
@@ -26,9 +23,19 @@ export const AddVideoModal = () => {
     const [reminderPreset, setReminderPreset] = useState<string | null>(null);
 
     useEffect(() => {
-        checkClipboard();
         loadFolders();
-    }, []);
+
+        // Check for shared URL from navigation params first
+        const sharedUrl = route.params?.sharedUrl;
+        if (sharedUrl && isValidLink(sharedUrl)) {
+            console.log('[AddVideoModal] Received shared URL:', sharedUrl);
+            setUrl(sharedUrl);
+            fetchMetadata(sharedUrl);
+        } else {
+            // Fall back to clipboard check
+            checkClipboard();
+        }
+    }, [route.params?.sharedUrl]);
 
     const loadFolders = async () => {
         const f = await getFolders();

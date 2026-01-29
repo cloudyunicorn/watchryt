@@ -87,17 +87,38 @@ export const VideoCard = ({ video, onPress, onDelete }: Props) => {
             </View>
 
             <View style={styles.content}>
-                <Text style={styles.title} numberOfLines={2}>{video.title}</Text>
-                {video.creator ? <Text style={styles.creator}>{video.creator}</Text> : null}
-
-                {video.reminderTime && (
-                    <View style={styles.reminderContainer}>
-                        <Ionicons name="alarm-outline" size={14} color={theme.colors.primary} />
-                        <Text style={styles.reminderText}>
-                            {new Date(video.reminderTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </Text>
+                {/* Creator/Username at top */}
+                {video.creator ? (
+                    <View style={styles.creatorRow}>
+                        <Text style={styles.creator}>{video.creator}</Text>
+                        <View style={styles.platformTag}>
+                            <Text style={styles.platformTagText}>{video.platform}</Text>
+                        </View>
+                    </View>
+                ) : (
+                    <View style={styles.platformTag}>
+                        <Text style={styles.platformTagText}>{video.platform}</Text>
                     </View>
                 )}
+
+                {/* Title/Caption */}
+                <Text style={styles.title} numberOfLines={2}>{video.title}</Text>
+
+                {/* Bottom row with date and reminder */}
+                <View style={styles.metaRow}>
+                    <Text style={styles.dateText}>
+                        {new Date(video.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                    </Text>
+
+                    {video.reminderTime && (
+                        <View style={styles.reminderContainer}>
+                            <Ionicons name="alarm-outline" size={12} color={theme.colors.primary} />
+                            <Text style={styles.reminderText}>
+                                {new Date(video.reminderTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </Text>
+                        </View>
+                    )}
+                </View>
             </View>
 
             <Pressable onPress={onDelete} style={styles.deleteBtn}>
@@ -153,16 +174,44 @@ const styles = StyleSheet.create({
     creator: {
         color: theme.colors.textSecondary,
         fontSize: theme.typography.caption.fontSize,
+        fontWeight: '600',
+    },
+    creatorRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+        gap: 8,
+    },
+    platformTag: {
+        backgroundColor: theme.colors.surfaceHighlight,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    platformTagText: {
+        color: theme.colors.textSecondary,
+        fontSize: 10,
+        fontWeight: '600',
+        textTransform: 'uppercase',
     },
     reminderContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 8,
+        marginLeft: 8,
     },
     reminderText: {
         color: theme.colors.primary,
-        fontSize: 12,
-        marginLeft: 4,
+        fontSize: 11,
+        marginLeft: 3,
+    },
+    metaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 6,
+    },
+    dateText: {
+        color: theme.colors.textSecondary,
+        fontSize: 11,
     },
     deleteBtn: {
         padding: 8,

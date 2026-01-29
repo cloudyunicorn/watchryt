@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,9 @@ import { FolderListScreen } from '../screens/FolderListScreen';
 import { FolderDetailScreen } from '../screens/FolderDetailScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { AddVideoModal } from '../screens/AddVideoModal';
+
+// Navigation ref for programmatic navigation from App.tsx
+export const navigationRef = createNavigationContainerRef<any>();
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -50,7 +53,7 @@ const MainTabs = () => (
 );
 
 export const RootNavigator = () => (
-    <NavigationContainer theme={DarkTheme}>
+    <NavigationContainer ref={navigationRef} theme={DarkTheme}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen

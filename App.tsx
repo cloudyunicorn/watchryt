@@ -1,14 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { RootNavigator } from './src/navigation';
+import { RootNavigator, navigationRef } from './src/navigation';
 import { initDatabase } from './src/services/db';
 import { initNotifications } from './src/services/reminders';
 import * as Notifications from 'expo-notifications';
-import { Linking } from 'react-native';
-
+import { Linking, Platform } from 'react-native';
+import { useShareIntent } from 'expo-share-intent';
 
 export default function App() {
+  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent();
+  const hasHandledIntent = useRef(false);
+
   useEffect(() => {
     // Configure notification handler
     try {
@@ -36,6 +39,34 @@ export default function App() {
       console.error("Initialization failed", e);
     }
   };
+
+  // Handle share intent from other apps
+  useEffect(() => {
+    if (hasShareIntent && shareIntent && !hasHandledIntent.current) {
+      hasHandledIntent.current = true;
+
+      // Extract URL from share intent
+      let sharedUrl = '';
+      if (shareIntent.text) {
+        // Try to extract URL from text
+        const urlMatch = shareIntent.text.match(/https?:\/\/[^\s]+/);
+        sharedUrl = urlMatch ? urlMatch[0] : shareIntent.text;
+      } else if (shareIntent.webUrl) {
+        sharedUrl = shareIntent.webUrl;
+      }
+
+      console.log('[ShareIntent] Received URL:', sharedUrl);
+
+      if (sharedUrl && navigationRef.current) {
+        // Small delay to ensure navigation is ready
+        setTimeout(() => {
+          navigationRef.current?.navigate('AddVideo', { sharedUrl });
+          resetShareIntent();
+          hasHandledIntent.current = false;
+        }, 500);
+      }
+    }
+  }, [hasShareIntent, shareIntent]);
 
   // Handle deep linking from notifications
   useEffect(() => {
